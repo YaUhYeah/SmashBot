@@ -23,7 +23,15 @@ public class TournamentData {
     private final Set<Long> notifiedMatches; // Tracks matches that have been notified
     private boolean roundNotified;
     private ScheduledFuture<?> scheduler; // Mutable to allow assignment upon starting
-    private boolean started; // Flag to indicate if the tournament has been started
+    public enum TournamentState {
+        CREATED,
+        REGISTRATION,
+        STARTED,
+        PAUSED,
+        COMPLETE
+    }
+
+    private TournamentState state;
     private ChallongeDataClasses.Tournament tournament;
 
     public TournamentData(Long tournamentId, String tournamentType, MessageChannelUnion channel, ChallongeDataClasses.Tournament tournament) {
@@ -32,7 +40,7 @@ public class TournamentData {
         this.channel = channel;
         this.matchToTournamentMap = new ConcurrentHashMap<>();
         this.participants = new ConcurrentHashMap<>();
-        this.started = false;
+        this.state = TournamentState.CREATED;
         this.notifiedMatches = ConcurrentHashMap.newKeySet();
         this.tournament = tournament;
         this.roundNotified = false;
@@ -75,12 +83,24 @@ public class TournamentData {
         return participants;
     }
 
+    public TournamentState getState() {
+        return state;
+    }
+
+    public void setState(TournamentState state) {
+        this.state = state;
+    }
+
     public boolean isStarted() {
-        return started;
+        return state == TournamentState.STARTED;
     }
 
     public void setStarted(boolean started) {
-        this.started = started;
+        if (started) {
+            this.state = TournamentState.STARTED;
+        } else if (this.state == TournamentState.STARTED) {
+            this.state = TournamentState.PAUSED;
+        }
     }
 
     public boolean isRoundNotified() {

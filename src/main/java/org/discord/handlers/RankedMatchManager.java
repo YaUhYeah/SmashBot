@@ -213,7 +213,7 @@ public class RankedMatchManager {private final ConcurrentMap<String, Match> acti
     }
 
     public void handleAdjustMatch(ButtonInteractionEvent event, String matchId) {
-        Match match = activeRankedMatches.get(matchId);
+        Match match = activeRankedMatchesById.get(matchId);
         if (match == null) {
             event.reply("No active match found with this ID.").setEphemeral(true).queue();
             return;

@@ -80,7 +80,7 @@ public class TournamentManager {
 
         try {
             // Finalize the tournament if it's not already finalized
-            if (!"complete".equalsIgnoreCase(tournamentData.getTournament().state)) {
+            if (tournamentData.getState() != TournamentData.TournamentState.COMPLETE && !"complete".equalsIgnoreCase(tournamentData.getTournament().state)) {
                 Call<ChallongeDataClasses.TournamentWrapper> finalizeCall = challongeService.finalizeTournament(tournamentId, new HashMap<>());
                 Response<ChallongeDataClasses.TournamentWrapper> finalizeResponse = finalizeCall.execute();
 
@@ -795,6 +795,7 @@ public class TournamentManager {
 
                 // Store tournament data
                 TournamentData tournamentData = new TournamentData(tournamentId, mappedType, event.getChannel(), createdTournament);
+                tournamentData.setState(TournamentData.TournamentState.REGISTRATION);
                 activeTournaments.put(tournamentId, tournamentData);
 
                 String bracketUrl = "https://challonge.com/" + url;
@@ -874,8 +875,15 @@ public class TournamentManager {
             return;
         }
         // Check if the tournament is already started
-        if (tournamentData.isStarted()) {
+        TournamentData.TournamentState currentState = tournamentData.getState();
+        if (currentState == TournamentData.TournamentState.STARTED) {
             replyToEvent(event, "⚠️ The tournament has already been started.", true);
+            return;
+        } else if (currentState == TournamentData.TournamentState.COMPLETE) {
+            replyToEvent(event, "⚠️ This tournament has already been completed.", true);
+            return;
+        } else if (currentState == TournamentData.TournamentState.CREATED) {
+            replyToEvent(event, "⚠️ The tournament is not yet open for registration.", true);
             return;
         }
 
@@ -1488,7 +1496,8 @@ public class TournamentManager {
                 channel.sendMessage("The tournament has concluded! Congratulations to the winner: " + winnerUser.getAsMention()).queue();
                 logger.info("Tournament '{}' concluded with winner '{}'.", updatedTournament.name, winnerUser.getAsTag());
 
-                // Reset tournament state
+                // Update tournament state to complete
+                tournamentData.setState(TournamentData.TournamentState.COMPLETE);
                 currentTournament = null;
                 tournamentParticipants.clear();
             } else {
