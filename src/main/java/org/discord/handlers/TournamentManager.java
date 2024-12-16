@@ -874,16 +874,21 @@ public class TournamentManager {
             replyToEvent(event, "❌ Tournament data not found. Please try again later.", true);
             return;
         }
-        // Check if the tournament is already started
-        TournamentData.TournamentState currentState = tournamentData.getState();
-        if (currentState == TournamentData.TournamentState.STARTED) {
+        // Check tournament state
+        if (tournamentData.isStarted()) {
             replyToEvent(event, "⚠️ The tournament has already been started.", true);
             return;
-        } else if (currentState == TournamentData.TournamentState.COMPLETE) {
+        } else if (tournamentData.isComplete()) {
             replyToEvent(event, "⚠️ This tournament has already been completed.", true);
             return;
-        } else if (currentState == TournamentData.TournamentState.CREATED) {
+        } else if (!tournamentData.isInRegistration()) {
             replyToEvent(event, "⚠️ The tournament is not yet open for registration.", true);
+            return;
+        }
+
+        // Check if there are enough participants
+        if (tournamentData.getParticipants().size() < 2) {
+            replyToEvent(event, "⚠️ At least 2 participants are required to start the tournament.", true);
             return;
         }
 
@@ -1497,7 +1502,10 @@ public class TournamentManager {
                 logger.info("Tournament '{}' concluded with winner '{}'.", updatedTournament.name, winnerUser.getAsTag());
 
                 // Update tournament state to complete
-                tournamentData.setState(TournamentData.TournamentState.COMPLETE);
+                TournamentData tournamentData = activeTournaments.get(updatedTournament.id);
+                if (tournamentData != null) {
+                    tournamentData.setState(TournamentData.TournamentState.COMPLETE);
+                }
                 currentTournament = null;
                 tournamentParticipants.clear();
             } else {

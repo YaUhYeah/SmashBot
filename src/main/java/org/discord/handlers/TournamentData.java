@@ -95,10 +95,18 @@ public class TournamentData {
         return state == TournamentState.STARTED;
     }
 
+    public boolean isComplete() {
+        return state == TournamentState.COMPLETE;
+    }
+
+    public boolean isInRegistration() {
+        return state == TournamentState.REGISTRATION;
+    }
+
     public void setStarted(boolean started) {
-        if (started) {
+        if (started && state == TournamentState.REGISTRATION) {
             this.state = TournamentState.STARTED;
-        } else if (this.state == TournamentState.STARTED) {
+        } else if (!started && this.state == TournamentState.STARTED) {
             this.state = TournamentState.PAUSED;
         }
     }
